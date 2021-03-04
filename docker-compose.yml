@@ -1,0 +1,186 @@
+version: '3.7'
+##############
+# Networking #
+##############
+networks:
+  default:
+    external:
+      name: media
+##############
+# Containers #
+##############
+services:
+  ########
+  # Plex #
+  ########
+  plex:
+    container_name: plex
+    image: plexinc/pms-docker:plexpass
+    restart: unless-stopped
+    ports:
+      - 32400:32400/tcp
+      - 3005:3005/tcp
+      - 8324:8324/tcp
+      - 32469:32469/tcp
+      - 1900:1900/udp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+      - PLEX_CLAIM=${PLEX_CLAIM_CODE}
+      - ADVERTISE_IP=${HOST_IP}
+    hostname: plex
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_PLEX}/config:/config
+      - ${PATH_PLEX}/transcode:/transcode
+      - ${PATH_MEDIA}:/data
+
+  ################
+  # Transmission #
+  ################
+  transmission:
+    image: ghcr.io/linuxserver/transmission:latest
+    container_name: transmission-whitelist
+    restart: unless-stopped
+    ports:
+      - 9091:9091
+      - 51413:51413
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+      - TRANSMISSION_WEB_HOME=/combustion-release/
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - WHITELIST=${TRANSMISSION_WHITELIST}
+      - HOST_WHITELIST=${TRANSMISSION_HOST_WHITELIST}
+    volumes:
+      - ${PATH_DOCKER}/transmission/config:/config
+      - ${PATH_DOCKER}/transmission/downloads:/downloads
+      - ${PATH_DOCKER}/transmission/watch:/watch
+      - ${PATH_MEDIA}:/media
+  ############
+  # Tautulli #
+  ############
+  tautulli:
+    container_name: tautulli
+    image: shiggins8/tautulli:latest
+    restart: unless-stopped
+    ports:
+      - 8181:9191/tcp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    hostname: tautulli
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_DOCKER}/tautulli/config:/config
+      - ${PATH_PLEX}/config/Library/Logs:/logs
+  ###########
+  # Jackett #
+  ###########
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett:latest
+    restart: unless-stopped
+    ports:
+      - 9117:9117/tcp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    hostname: jackett
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_DOCKER}/jackett/config:/config
+      - ${PATH_DOCKER}/jackett/downloads/queue:/downloads
+  ##########
+  # Lidarr #
+  ##########
+  lidarr:
+    container_name: lidarr
+    image: linuxserver/lidarr:latest
+    restart: unless-stopped
+    ports:
+      - 8686:8686/tcp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    hostname: lidarr
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_DOCKER}/lidarr/config:/config
+      - ${PATH_DOCKER}/lidarr/downloads:/downloads
+      - ${PATH_MEDIA}/Musics:/musics
+  ##########
+  # Radarr #
+  ##########
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    ports:
+      - 7878:7878/tcp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    hostname: radarr
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_DOCKER}/radarr/config:/config
+      - ${PATH_DOCKER}/radarr/downloads:/downloads
+      - ${PATH_MEDIA}/Films:/movies
+  ##########
+  # Sonarr #
+  ##########
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    ports:
+      - 8989:8989/tcp
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    hostname: sonarr
+    labels:
+      - stack=media
+    volumes:
+      - ${PATH_DOCKER}/sonarr/config:/config
+      - ${PATH_DOCKER}/sonarr/downloads:/downloads
+      - ${PATH_MEDIA}/Series:/series
+      - ${PATH_MEDIA}/Animes:/animes
+  #########
+  # Beets #
+  #########     
+  beets:
+    container_name: beets
+    image: linuxserver/beets:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    labels:
+      - stack=media
+    hostname: beets
+    volumes:
+      - ${PATH_DOCKER}/beets/config:/config
+      - ${PATH_DOCKER}/beets/downloads/:/downloads
+      - ${PATH_MEDIA}/Musics:/music
+    ports:
+      - 8337:8337
+    restart: unless-stopped
