@@ -5,7 +5,7 @@ version: '3.7'
 networks:
   default:
     external:
-      name: media
+      name: medias
 ##############
 # Containers #
 ##############
@@ -13,58 +13,34 @@ services:
   ########
   # Plex #
   ########
-  plex:
-    container_name: plex
-    image: plexinc/pms-docker:plexpass
-    restart: unless-stopped
-    ports:
-      - 32400:32400/tcp
-      - 3005:3005/tcp
-      - 8324:8324/tcp
-      - 32469:32469/tcp
-      - 1900:1900/udp
-      - 32410:32410/udp
-      - 32412:32412/udp
-      - 32413:32413/udp
-      - 32414:32414/udp
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=Europe/Paris
-      - PLEX_CLAIM=${PLEX_CLAIM_CODE}
-      - ADVERTISE_IP=${HOST_IP}
-    hostname: plex
-    labels:
-      - stack=media
-    volumes:
-      - ${PATH_PLEX}/config:/config
-      - ${PATH_PLEX}/transcode:/transcode
-      - ${PATH_MEDIA}:/data
+ plex:
+   container_name: plex
+   image: plexinc/pms-docker:plexpass
+   restart: unless-stopped
+   ports:
+     - 32400:32400/tcp
+     - 3005:3005/tcp
+     - 8324:8324/tcp
+     - 32469:32469/tcp
+     - 1900:1900/udp
+     - 32410:32410/udp
+     - 32412:32412/udp
+     - 32413:32413/udp
+     - 32414:32414/udp
+   environment:
+     - PLEX_UID=${PUID}
+     - PLEX_GID=${PGID}
+     - TZ={TZ}
+     - PLEX_CLAIM=${PLEX_CLAIM_CODE}
+     - ADVERTISE_IP=${HOST_IP}
+   hostname: plex
+  labels:
+    - stack=media
+   volumes:
+     - ${PATH_PLEX}/config:/config
+     - ${PATH_PLEX}/transcode:/transcode
+     - ${PATH_MEDIA}:/data
 
-  ################
-  # Transmission #
-  ################
-  transmission:
-    image: ghcr.io/linuxserver/transmission:latest
-    container_name: transmission-whitelist
-    restart: unless-stopped
-    ports:
-      - 9091:9091
-      - 51413:51413
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=Europe/Paris
-      - TRANSMISSION_WEB_HOME=/combustion-release/
-      - USER=${TRANSMISSION_USERNAME}
-      - PASS=${TRANSMISSION_PASSWORD}
-      - WHITELIST=${TRANSMISSION_WHITELIST}
-      - HOST_WHITELIST=${TRANSMISSION_HOST_WHITELIST}
-    volumes:
-      - ${PATH_DOCKER}/transmission/config:/config
-      - ${PATH_DOCKER}/transmission/downloads:/downloads
-      - ${PATH_DOCKER}/transmission/watch:/watch
-      - ${PATH_MEDIA}:/media
   ############
   # Tautulli #
   ############
@@ -161,12 +137,11 @@ services:
       - stack=media
     volumes:
       - ${PATH_DOCKER}/sonarr/config:/config
-      - ${PATH_DOCKER}/sonarr/downloads:/downloads
-      - ${PATH_MEDIA}/Series:/series
-      - ${PATH_MEDIA}/Animes:/animes
+      - /home/transmission/torrents:/downloads
+      - ${PATH_MEDIA}:/media
   #########
   # Beets #
-  #########     
+  #########
   beets:
     container_name: beets
     image: linuxserver/beets:latest
