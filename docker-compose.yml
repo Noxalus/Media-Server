@@ -1,65 +1,52 @@
 version: '3.7'
 ##############
-# Networking #
-##############
-networks:
-  default:
-    external:
-      name: medias
-##############
 # Containers #
 ##############
 services:
   ########
   # Plex #
   ########
- plex:
-   container_name: plex
-   image: plexinc/pms-docker:plexpass
-   restart: unless-stopped
-   ports:
-     - 32400:32400/tcp
-     - 3005:3005/tcp
-     - 8324:8324/tcp
-     - 32469:32469/tcp
-     - 1900:1900/udp
-     - 32410:32410/udp
-     - 32412:32412/udp
-     - 32413:32413/udp
-     - 32414:32414/udp
-   environment:
-     - PLEX_UID=${PUID}
-     - PLEX_GID=${PGID}
-     - TZ={TZ}
-     - PLEX_CLAIM=${PLEX_CLAIM_CODE}
-     - ADVERTISE_IP=${HOST_IP}
-   hostname: plex
-  labels:
-    - stack=media
-   volumes:
-     - ${PATH_PLEX}/config:/config
-     - ${PATH_PLEX}/transcode:/transcode
-     - ${PATH_MEDIA}:/data
-
+  plex:
+    container_name: plex
+    image: plexinc/pms-docker:plexpass
+    restart: unless-stopped
+    ports:
+      - 32400:32400/tcp
+      - 3005:3005/tcp
+      - 8324:8324/tcp
+      - 32469:32469/tcp
+      # - 1900:1900/udp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+    environment:
+      - PLEX_UID=${PUID}
+      - PLEX_GID=${PGID}
+      - TZ=${TIME_ZONE}
+      - PLEX_CLAIM=${PLEX_CLAIM_CODE}
+    hostname: plex
+    volumes:
+      - ${PATH_MEDIA}:/media
+      - ${PATH_PLEX}/config:/config
+      - ${PATH_PLEX}/transcode:/transcode
+      - ${PATH_MEDIA}:/data
   ############
   # Tautulli #
   ############
   tautulli:
     container_name: tautulli
-    image: shiggins8/tautulli:latest
+    image: tautulli/tautulli:latest
     restart: unless-stopped
     ports:
-      - 8181:9191/tcp
+      - 8181:8181/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
+      - TZ=${TIME_ZONE}
     hostname: tautulli
-    labels:
-      - stack=media
     volumes:
       - ${PATH_DOCKER}/tautulli/config:/config
-      - ${PATH_PLEX}/config/Library/Logs:/logs
   ###########
   # Jackett #
   ###########
@@ -72,16 +59,23 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
+      - TZ=${TIME_ZONE}
     hostname: jackett
-    labels:
-      - stack=media
     volumes:
       - ${PATH_DOCKER}/jackett/config:/config
-      - ${PATH_DOCKER}/jackett/downloads/queue:/downloads
-  ##########
-  # Lidarr #
-  ##########
+      - ${PATH_DOWNLOAD}:/downloads
+  ################
+  # FlareSolverr #
+  ################
+  mango:
+    container_name: flaresolverr
+    image: flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    ports:
+      - 8191:8191
+  # ##########
+  # # Lidarr #
+  # ##########
   lidarr:
     container_name: lidarr
     image: linuxserver/lidarr:latest
@@ -91,14 +85,12 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
+      - TZ=${TIME_ZONE}
     hostname: lidarr
-    labels:
-      - stack=media
     volumes:
       - ${PATH_DOCKER}/lidarr/config:/config
-      - ${PATH_DOCKER}/lidarr/downloads:/downloads
-      - ${PATH_MEDIA}/Musics:/musics
+      - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_MEDIA}/Musics:/media
   ##########
   # Radarr #
   ##########
@@ -111,14 +103,12 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
+      - TZ=${TIME_ZONE}
     hostname: radarr
-    labels:
-      - stack=media
     volumes:
       - ${PATH_DOCKER}/radarr/config:/config
-      - ${PATH_DOCKER}/radarr/downloads:/downloads
-      - ${PATH_MEDIA}/Films:/movies
+      - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_MEDIA}/Films:/media
   ##########
   # Sonarr #
   ##########
@@ -131,31 +121,64 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
+      - TZ=${TIME_ZONE}
     hostname: sonarr
-    labels:
-      - stack=media
     volumes:
       - ${PATH_DOCKER}/sonarr/config:/config
-      - /home/transmission/torrents:/downloads
+      - ${PATH_DOWNLOAD}:/downloads
       - ${PATH_MEDIA}:/media
-  #########
-  # Beets #
-  #########
-  beets:
-    container_name: beets
-    image: linuxserver/beets:latest
+  # #########
+  # # Beets #
+  # #########
+  # beets:
+  #   container_name: beets
+  #   image: linuxserver/beets:latest
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TIME_ZONE}
+  #   labels:
+  #     - stack=media
+  #   hostname: beets
+  #   volumes:
+  #     - ${PATH_DOCKER}/beets/config:/config
+  #     - ${PATH_DOCKER}/beets/downloads/:/downloads
+  #     - ${PATH_MEDIA}/Musics:/music
+  #   ports:
+  #     - 8337:8337
+  #   restart: unless-stopped
+  ################
+  # Transmission #
+  ################
+  transmission:
+    image: linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    ports:
+      - 9091:9091
+      - 51413:51413
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=Europe/Paris
-    labels:
-      - stack=media
-    hostname: beets
+      - TZ=${TIME_ZONE}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
     volumes:
-      - ${PATH_DOCKER}/beets/config:/config
-      - ${PATH_DOCKER}/beets/downloads/:/downloads
-      - ${PATH_MEDIA}/Musics:/music
-    ports:
-      - 8337:8337
-    restart: unless-stopped
+      - ${PATH_DOCKER}/transmission/config:/config
+      - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_DOWNLOAD}:/watch
+      - ${PATH_MEDIA}:/media
+  #########
+  # Mango #
+  #########
+  # mango:
+  #   image: hkalexling/mango:latest
+  #   container_name: mango
+  #   expose:
+  #     - 9000
+  #   ports:
+  #     - 9000:9000
+  #   volumes:
+  #     - ${PATH_DOCKER}/mango:/root/mango
+  #     - ${PATH_DOCKER}/mango/config:/root/.config/mango
+  #     - ${PATH_MANGO_LIBRARY}:/root/mango/library
