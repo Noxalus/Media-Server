@@ -76,21 +76,21 @@ services:
   # ##########
   # # Lidarr #
   # ##########
-  lidarr:
-    container_name: lidarr
-    image: linuxserver/lidarr:latest
-    restart: unless-stopped
-    ports:
-      - 8686:8686/tcp
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIME_ZONE}
-    hostname: lidarr
-    volumes:
-      - ${PATH_DOCKER}/lidarr/config:/config
-      - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_MEDIA}/Musics:/media
+  # lidarr:
+  #   container_name: lidarr
+  #   image: linuxserver/lidarr:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8686:8686/tcp
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TIME_ZONE}
+  #   hostname: lidarr
+  #   volumes:
+  #     - ${PATH_DOCKER}/lidarr/config:/config
+  #     - ${PATH_DOWNLOAD}:/downloads
+  #     - ${PATH_MEDIA}/Musics:/media
   ##########
   # Radarr #
   ##########
