@@ -193,3 +193,22 @@ services:
   #     - ${PATH_DOCKER}/mango:/root/mango
   #     - ${PATH_DOCKER}/mango/config:/root/.config/mango
   #     - ${PATH_MANGO_LIBRARY}:/root/mango/library
+  ##############
+  # EmulatorJS #
+  ##############
+  emulatorjs:
+    image: lscr.io/linuxserver/emulatorjs:latest
+    container_name: emulatorjs
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIME_ZONE}
+      - SUBFOLDER=/ # optional
+    volumes:
+      - ${PATH_DOCKER}/emulatorjs/config:/config
+      - ${PATH_EMULATOR}:/data
+    ports:
+      - 3000:3000
+      # - 80:80
+      # - 4001:4001 # optional
