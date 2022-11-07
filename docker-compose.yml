@@ -51,7 +51,7 @@ services:
       - 8096:8096
       - 8920:8920 #optional
       - 7359:7359/udp #optional
-      - 1900:1900/udp #optional
+      # - 1900:1900/udp #optional
   ############
   # Tautulli #
   ############
@@ -201,20 +201,37 @@ services:
       - ${PATH_DOWNLOAD}:/downloads
       - ${PATH_DOWNLOAD}:/watch
       - ${PATH_MEDIA}:/media
-  #########
-  # Mango #
-  #########
-  mango:
-    image: hkalexling/mango:latest
-    container_name: mango
-    expose:
-      - 9000
-    ports:
-      - 9000:9000
+  # #########
+  # # Mango #
+  # #########
+  # mango:
+  #   image: hkalexling/mango:latest
+  #   container_name: mango
+  #   expose:
+  #     - 9000
+  #   ports:
+  #     - 9000:9000
+  #   volumes:
+  #     - ${PATH_DOCKER}/mango:/root/mango
+  #     - ${PATH_DOCKER}/mango/config:/root/.config/mango
+  #     - ${PATH_MANGO_LIBRARY}:/root/mango/library
+  ubooquity:
+    image: lscr.io/linuxserver/ubooquity:latest
+    container_name: ubooquity
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIME_ZONE}
+      - MAXMEM=1000000
     volumes:
-      - ${PATH_DOCKER}/mango:/root/mango
-      - ${PATH_DOCKER}/mango/config:/root/.config/mango
-      - ${PATH_MANGO_LIBRARY}:/root/mango/library
+      - ${PATH_DOCKER}/ubooquity/config:/config
+      - ${PATH_MANGO_LIBRARY}:/books
+      - ${PATH_MANGO_LIBRARY}:/comics
+      - ${PATH_MANGO_LIBRARY}:/files
+    ports:
+      - 2202:2202
+      - 2203:2203
   ##############
   # EmulatorJS #
   ##############
