@@ -31,6 +31,27 @@ services:
       - ${PATH_PLEX}/config:/config
       - ${PATH_PLEX}/transcode:/transcode
       - ${PATH_MEDIA}:/data
+  ##############
+  # Jellyfin   #
+  ##############
+  jellyfin:
+    container_name: jellyfin
+    image: lscr.io/linuxserver/jellyfin:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIME_ZONE}
+      - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
+    volumes:
+      - ${PATH_JELLYFIN}/config:/config
+      - ${PATH_MEDIA}:/data/tvshows
+      - ${PATH_MEDIA}:/data/movies
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
   ############
   # Tautulli #
   ############
@@ -67,7 +88,7 @@ services:
   ################
   # FlareSolverr #
   ################
-  mango:
+  flare-solver:
     container_name: flaresolverr
     image: flaresolverr/flaresolverr:latest
     restart: unless-stopped
@@ -126,6 +147,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/sonarr/config:/config
       - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_DOWNLOAD}:/data
       - ${PATH_MEDIA}:/media
   # #########
   # # Beets #
@@ -175,40 +197,40 @@ services:
           max-size: 10m
     volumes:
       - ${PATH_DOCKER}/transmission/config:/config
-      - ${PATH_DOWNLOAD}:/downloads
       - ${PATH_DOWNLOAD}:/data
+      - ${PATH_DOWNLOAD}:/downloads
       - ${PATH_DOWNLOAD}:/watch
       - ${PATH_MEDIA}:/media
   #########
   # Mango #
   #########
-  # mango:
-  #   image: hkalexling/mango:latest
-  #   container_name: mango
-  #   expose:
-  #     - 9000
-  #   ports:
-  #     - 9000:9000
-  #   volumes:
-  #     - ${PATH_DOCKER}/mango:/root/mango
-  #     - ${PATH_DOCKER}/mango/config:/root/.config/mango
-  #     - ${PATH_MANGO_LIBRARY}:/root/mango/library
+  mango:
+    image: hkalexling/mango:latest
+    container_name: mango
+    expose:
+      - 9000
+    ports:
+      - 9000:9000
+    volumes:
+      - ${PATH_DOCKER}/mango:/root/mango
+      - ${PATH_DOCKER}/mango/config:/root/.config/mango
+      - ${PATH_MANGO_LIBRARY}:/root/mango/library
   ##############
   # EmulatorJS #
   ##############
-  emulatorjs:
-    image: lscr.io/linuxserver/emulatorjs:latest
-    container_name: emulatorjs
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIME_ZONE}
-      - SUBFOLDER=/ # optional
-    volumes:
-      - ${PATH_DOCKER}/emulatorjs/config:/config
-      - ${PATH_EMULATOR}:/data
-    ports:
-      - 3000:3000
-      # - 80:80
-      # - 4001:4001 # optional
+  # emulatorjs:
+  #   image: lscr.io/linuxserver/emulatorjs:latest
+  #   container_name: emulatorjs
+  #   restart: unless-stopped
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TIME_ZONE}
+  #     - SUBFOLDER=/ # optional
+  #   volumes:
+  #     - ${PATH_DOCKER}/emulatorjs/config:/config
+  #     - ${PATH_EMULATOR}:/data
+  #   ports:
+  #     - 3000:3000
+  #     # - 80:80
+  #     # - 4001:4001 # optional
