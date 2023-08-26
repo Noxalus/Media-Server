@@ -13,6 +13,18 @@ volumes:
 # Containers #
 ##############
 services:
+  #############
+  # Portainer #
+  #############
+  portainer:
+    container_name: portainer
+    restart: unless-stopped
+    image: portainer/portainer-ce:latest
+    ports:
+      - 9443:9443
+    volumes:
+      - ${PATH_DOCKER}/portainer/config:/config
+      - /var/run/docker.sock:/var/run/docker.sock
   ########
   # Plex #
   ########
@@ -84,6 +96,7 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -92,7 +105,6 @@ services:
       - ${PATH_DOCKER}/prowlarr/config:/config
     ports:
       - 9696:9696
-    restart: unless-stopped
   ###########
   # Jackett #
   ###########
@@ -154,7 +166,8 @@ services:
     volumes:
       - ${PATH_DOCKER}/radarr/config:/config
       - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_MEDIA}/Movies/Films:/media
+      - ${PATH_DOWNLOAD}:/data
+      - ${PATH_MEDIA}:/media
   #############################
   # Radarr (for Anime Movies) #
   #############################
@@ -172,6 +185,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/radarr-animes/config:/config
       - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_DOWNLOAD}:/data
       - ${PATH_MEDIA}/Movies/Animations/Animes:/media
   ###############################
   # Radarr (for Cartoon Movies) #
@@ -190,6 +204,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/radarr-cartoons/config:/config
       - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_DOWNLOAD}:/data
       - ${PATH_MEDIA}/Movies/Animations/Cartoons:/media
   #######################
   # Sonarr (for Animes) #
@@ -303,19 +318,19 @@ services:
   ############
   # TubeSync #
   ############
-  # tubesync:
-  #   image: ghcr.io/meeb/tubesync:latest
-  #   container_name: tubesync
-  #   restart: unless-stopped
-  #   ports:
-  #     - 4848:4848
-  #   volumes:
-  #     - ${PATH_DOCKER}/tubesync/config:/config
-  #     - ${TUBESYNC_PATH_MEDIA}:/downloads
-  #   environment:
-  #     - TZ=${TIME_ZONE}
-  #     - PUID=${PUID}
-  #     - PGID=${PGID}
+  tubesync:
+    image: ghcr.io/meeb/tubesync:latest
+    container_name: tubesync
+    restart: unless-stopped
+    ports:
+      - 4848:4848
+    volumes:
+      - ${PATH_DOCKER}/tubesync/config:/config
+      - ${TUBESYNC_PATH_MEDIA}:/downloads
+    environment:
+      - TZ=${TIME_ZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
   #################
   # TubeArchivist #
   #################
