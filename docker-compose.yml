@@ -1,8 +1,14 @@
 version: '3.7'
 
 networks:
-  gitea:
-    external: false
+  mediastack:
+    name: mediastack
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DOCKER_SUBNET:?err}
+        gateway: ${DOCKER_GATEWAY:?err}
 
 volumes:
   cache:
@@ -14,18 +20,55 @@ volumes:
 # Containers #
 ##############
 services:
-  #############
-  # Portainer #
-  #############
-  # portainer:
-  #   container_name: portainer
-  #   restart: unless-stopped
-  #   image: portainer/portainer-ce:latest
-  #   ports:
-  #     - 9443:9443
-  #   volumes:
-  #     - ${PATH_DOCKER}/portainer/config:/config
-  #     - /var/run/docker.sock:/var/run/docker.sock
+  ###########
+  # Gluetun #
+  ###########
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp                         # Gluetun Local Network HTTP proxy
+      - 8388:8388/tcp                         # Gluetun Local Network Shadowsocks
+      - 8388:8388/udp                         # Gluetun Local Network Shadowsocks
+      - ${GLUETUN_CONTROL_PORT:?err}:${GLUETUN_CONTROL_PORT:?err} # Gluetun Status Port
+      # Comment out lines below if they are not going to use Gluetun VPN for Internet connection:
+      # - ${WEBUI_PORT_SABNZBD:?err}:8080       # WebUI Portal: SABnzbd
+      - ${WEBUI_PORT_QBITTORRENT:?err}:${WEBUI_PORT_QBITTORRENT:?err}   # WebUI Portal: qBittorrent
+      # - ${QBIT_PORT:?err}:6881                # Transmission Torrent Port
+    volumes:
+      - ${PATH_DOCKER}/gluetun:/gluetun
+    environment:
+      - PUID=${PUID:?err}
+      - PGID=${PGID:?err}
+      - UMASK=${UMASK:?err}
+      - TZ=${TIME_ZONE:?err}
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:?err}
+      - OPENVPN_USER=${VPN_USERNAME:?err}
+      - OPENVPN_PASSWORD=${VPN_PASSWORD:?err}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
+      - SERVER_REGIONS=${SERVER_REGIONS}
+      - SERVER_CITIES=${SERVER_CITIES}
+      - SERVER_HOSTNAMES=${SERVER_HOSTNAMES}
+      - SERVER_CATEGORIES=${SERVER_CATEGORIES}
+      - FIREWALL_OUTBOUND_SUBNETS=${LOCAL_SUBNET:?err}
+      - OPENVPN_CUSTOM_CONFIG=${OPENVPN_CUSTOM_CONFIG}
+      - HTTP_CONTROL_SERVER_ADDRESS=:${GLUETUN_CONTROL_PORT:?err}
+      - VPN_TYPE=${VPN_TYPE}
+      - VPN_ENDPOINT_IP=${VPN_ENDPOINT_IP}
+      - VPN_ENDPOINT_PORT=${VPN_ENDPOINT_PORT}
+      - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - HTTPPROXY=on
+      - SHADOWSOCKS=on
+    networks:
+      - mediastack
   ########
   # Plex #
   ########
@@ -34,7 +77,7 @@ services:
     image: plexinc/pms-docker:plexpass
     restart: unless-stopped
     ports:
-      - 32400:32400/tcp
+      - ${WEBUI_PORT_PLEX}:${WEBUI_PORT_PLEX}/tcp
       - 3005:3005/tcp
       - 8324:8324/tcp
       - 32469:32469/tcp
@@ -103,7 +146,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/prowlarr/config:/config
     ports:
-      - 9696:9696
+      - ${WEBUI_PORT_PROWLARR}:${WEBUI_PORT_PROWLARR}
   ###########
   # Jackett #
   ###########
@@ -129,7 +172,7 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:pr-1282
     restart: unless-stopped
     ports:
-      - 8191:8191
+      - ${FLARESOLVERR_PORT}:${FLARESOLVERR_PORT}
   # ##########
   # # Lidarr #
   # ##########
@@ -156,7 +199,7 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     restart: unless-stopped
     ports:
-      - 7878:7878/tcp
+      - ${WEBUI_PORT_RADARR_MOVIES}:${WEBUI_PORT_RADARR_MOVIES}/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -175,7 +218,7 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     restart: unless-stopped
     ports:
-      - 7879:7879/tcp
+      - ${WEBUI_PORT_RADARR_ANIME_MOVIES}:${WEBUI_PORT_RADARR_ANIME_MOVIES}/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -194,7 +237,7 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     restart: unless-stopped
     ports:
-      - 7880:7880/tcp
+      - ${WEBUI_PORT_RADARR_CARTOON_MOVIES}:${WEBUI_PORT_RADARR_CARTOON_MOVIES}/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -213,7 +256,7 @@ services:
     image: lscr.io/linuxserver/sonarr:latest
     restart: unless-stopped
     ports:
-      - 8989:8989/tcp
+      - ${WEBUI_PORT_SONARR_ANIMES}:${WEBUI_PORT_SONARR_ANIMES}/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -232,7 +275,7 @@ services:
     image: lscr.io/linuxserver/sonarr:latest
     restart: unless-stopped
     ports:
-      - 8990:8990/tcp
+      - ${WEBUI_PORT_SONARR_SERIES}:${WEBUI_PORT_SONARR_SERIES}/tcp
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -266,35 +309,35 @@ services:
   ################
   # Transmission #
   ################
-  transmission:
-    image: haugene/transmission-openvpn:latest
-    container_name: transmission
-    restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-    ports:
-      - '9091:9091'
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIME_ZONE}
-      - USER=${TRANSMISSION_USERNAME}
-      - PASS=${TRANSMISSION_PASSWORD}
-      - OPENVPN_PROVIDER=${OPENVPN_PROVIDER}
-      - OPENVPN_CONFIG=${OPENVPN_CONFIG}
-      - OPENVPN_USERNAME=${OPENVPN_USERNAME}
-      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-      - LOCAL_NETWORK=192.168.0.0/16
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-    volumes:
-      - ${PATH_DOCKER}/transmission/config:/config
-      - ${PATH_DOWNLOAD}:/data
-      - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_DOWNLOAD}:/watch
-      - ${PATH_MEDIA}:/media
+  # transmission:
+  #   image: haugene/transmission-openvpn:latest
+  #   container_name: transmission
+  #   restart: unless-stopped
+  #   cap_add:
+  #     - NET_ADMIN
+  #   ports:
+  #     - '9091:9091'
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TIME_ZONE}
+  #     - USER=${TRANSMISSION_USERNAME}
+  #     - PASS=${TRANSMISSION_PASSWORD}
+  #     - OPENVPN_PROVIDER=${OPENVPN_PROVIDER}
+  #     - OPENVPN_CONFIG=${OPENVPN_CONFIG}
+  #     - OPENVPN_USERNAME=${OPENVPN_USERNAME}
+  #     - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+  #     - LOCAL_NETWORK=192.168.0.0/16
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: 10m
+  #   volumes:
+  #     - ${PATH_DOCKER}/transmission/config:/config
+  #     - ${PATH_DOWNLOAD}:/data
+  #     - ${PATH_DOWNLOAD}:/downloads
+  #     - ${PATH_DOWNLOAD}:/watch
+  #     - ${PATH_MEDIA}:/media
   ###############
   # qBittorrent #
   ###############
@@ -302,19 +345,23 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
+      - UMASK=${UMASK:?err}
       - TZ=${TIME_ZONE}
-      - WEBUI_PORT=8080
-      - TORRENTING_PORT=6881
+      - WEBUI_PORT=${WEBUI_PORT_QBITTORRENT}
+      - TORRENTING_PORT=${QBIT_PORT}
     volumes:
       - ${PATH_DOCKER}/qbittorrent/config:/config
       - ${PATH_DOWNLOAD}:/downloads
-    ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+    ## Do Not Change Network for qBittorrent
+    ## qBittorrent MUST always use a VPN / Secure Internet connection
+    network_mode: "service:gluetun"
   ############
   # Ad Guard #
   ############
@@ -352,97 +399,6 @@ services:
   #     - 3042:3000
   #     - 3043:80
   #     # - 4001:4001 # optional
-  ############
-  # TubeSync #
-  ############
-  # tubesync:
-  #   image: ghcr.io/meeb/tubesync:latest
-  #   container_name: tubesync
-  #   restart: unless-stopped
-  #   ports:
-  #     - 4848:4848
-  #   volumes:
-  #     - ${PATH_DOCKER}/tubesync/config:/config
-  #     - ${TUBESYNC_PATH_MEDIA}:/downloads
-  #   environment:
-  #     - TZ=${TIME_ZONE}
-  #     - PUID=${PUID}
-  #     - PGID=${PGID}
-  #################
-  # TubeArchivist #
-  #################
-  # tubearchivist:
-  #   container_name: tubearchivist
-  #   restart: unless-stopped
-  #   image: bbilly1/tubearchivist
-  #   ports:
-  #     - 8000:8000
-  #   dns:
-  #     - 8.8.8.8
-  #     - 8.8.4.4
-  #   volumes:
-  #     - ${TA_PATH_MEDIA}:/youtube
-  #     - cache:/cache
-  #     # - ${PATH_DOCKER}/tubearchivist/resolv.conf:/etc/resolv.conf
-  #   environment:
-  #     - ES_URL=http://archivist-es:9200 # needs protocol e.g. http and port
-  #     - REDIS_HOST=archivist-redis # don't add protocol
-  #     - HOST_UID=${PUID}
-  #     - HOST_GID=${PGID}
-  #     - TZ=${TIME_ZONE}
-  #     - TA_HOST=${TA_HOSTNAME}
-  #     - TA_USERNAME=${TA_USERNAME}
-  #     - TA_PASSWORD=${TA_PASSWORD}
-  #     - ELASTIC_PASSWORD=${TA_ELASTIC_PASSWORD}
-  #   depends_on:
-  #     - archivist-es
-  #     - archivist-redis
-  # archivist-redis:
-  #   image: redislabs/rejson # for arm64 use bbilly1/rejson
-  #   container_name: archivist-redis
-  #   restart: unless-stopped
-  #   expose:
-  #     - "6379"
-  #   volumes:
-  #     - redis:/data
-  #   depends_on:
-  #     - archivist-es
-  # archivist-es:
-  #   image: bbilly1/tubearchivist-es # only for amd64, or use official es 8.5.1
-  #   container_name: archivist-es
-  #   restart: unless-stopped
-  #   environment:
-  #     - "ELASTIC_PASSWORD=${TA_ELASTIC_PASSWORD}"
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #     - "xpack.security.enabled=true"
-  #     - "discovery.type=single-node"
-  #     - "path.repo=/usr/share/elasticsearch/data/snapshot"
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #   volumes:
-  #     - es:/usr/share/elasticsearch/data # check for permission error when using bind mount, see readme
-  #   expose:
-  #     - "9200"
-  #############
-  # Navidrome #
-  #############
-  # navidrome:
-  #   image: deluan/navidrome:latest
-  #   container_name: navidrome
-  #   restart: unless-stopped
-  #   ports:
-  #     - "4533:4533"
-  #   environment:
-  #     # Optional: put your config options customization here. Examples:
-  #     ND_SCANSCHEDULE: 1h
-  #     ND_LOGLEVEL: info
-  #     ND_SESSIONTIMEOUT: 24h
-  #     ND_BASEURL: ""
-  #   volumes:
-  #     - "${PATH_DOCKER}/navidrome/data:/data"
-  #     - "${PATH_NAVIDROME_DATA}:/music:ro"
   ##########
   # PiHole #
   ##########
