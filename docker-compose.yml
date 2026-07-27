@@ -243,7 +243,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/radarr/config:/config
       - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_MEDIA}:/media
+      - ${PATH_MEDIA}/Movies/Films:/media
     networks:
       - mediastack
   #############################
@@ -303,7 +303,7 @@ services:
     volumes:
       - ${PATH_DOCKER}/sonarr/config:/config
       - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_MEDIA}:/media
+      - ${PATH_MEDIA}/Animes:/media
     networks:
       - mediastack
   #######################
@@ -323,7 +323,10 @@ services:
     volumes:
       - ${PATH_DOCKER}/sonarr-series/config:/config
       - ${PATH_DOWNLOAD}:/downloads
-      - ${PATH_MEDIA}:/media
+      - ${PATH_MEDIA}/Cartoons:/cartoons
+      - ${PATH_MEDIA}/Documentaries/Series:/documentaries
+      - ${PATH_MEDIA}/Emissions:/emissions
+      - ${PATH_MEDIA}/Series:/series
     networks:
       - mediastack
   # #########
@@ -383,6 +386,8 @@ services:
       - ${PATH_DOWNLOAD}:/downloads
       - ${PATH_DOWNLOAD}:/watch
       - ${PATH_MEDIA}:/media
+    networks:
+      - mediastack
   ############
   # Ad Guard #
   ############
