@@ -18,76 +18,78 @@ services:
   ###########
   # Gluetun #
   ###########
-  gluetun:
-    image: qmcgaw/gluetun:latest
-    container_name: gluetun
-    restart: always
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    ports:
-      - 8888:8888/tcp                         # Gluetun Local Network HTTP proxy
-      - 8388:8388/tcp                         # Gluetun Local Network Shadowsocks
-      - 8388:8388/udp                         # Gluetun Local Network Shadowsocks
-      - ${GLUETUN_CONTROL_PORT:?err}:${GLUETUN_CONTROL_PORT:?err} # Gluetun Status Port
-      # Comment out lines below if they are not going to use Gluetun VPN for Internet connection:
-      # - ${WEBUI_PORT_SABNZBD:?err}:8080       # WebUI Portal: SABnzbd
-      - ${WEBUI_PORT_QBITTORRENT:?err}:${WEBUI_PORT_QBITTORRENT:?err}   # WebUI Portal: qBittorrent
-      - ${QBIT_PORT:?err}:6881                  # qBittorrent Torrent Port
-    volumes:
-      - ${PATH_DOCKER}/gluetun:/gluetun
-    environment:
-      - PUID=${PUID:?err}
-      - PGID=${PGID:?err}
-      - UMASK=${UMASK:?err}
-      - TZ=${TIME_ZONE:?err}
-      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:?err}
-      - OPENVPN_USER=${VPN_USERNAME:?err}
-      - OPENVPN_PASSWORD=${VPN_PASSWORD:?err}
-      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
-      - SERVER_REGIONS=${SERVER_REGIONS}
-      - SERVER_CITIES=${SERVER_CITIES}
-      - SERVER_HOSTNAMES=${SERVER_HOSTNAMES}
-      - SERVER_CATEGORIES=${SERVER_CATEGORIES}
-      - FIREWALL_OUTBOUND_SUBNETS=${LOCAL_SUBNET:?err}
-      - OPENVPN_CUSTOM_CONFIG=${OPENVPN_CUSTOM_CONFIG}
-      - HTTP_CONTROL_SERVER_ADDRESS=:${GLUETUN_CONTROL_PORT:?err}
-      - VPN_TYPE=${VPN_TYPE}
-      - VPN_ENDPOINT_IP=${VPN_ENDPOINT_IP}
-      - VPN_ENDPOINT_PORT=${VPN_ENDPOINT_PORT}
-      - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
-      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
-      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
-      - HTTPPROXY=on
-      - SHADOWSOCKS=on
-    networks:
-      - mediastack
+  # gluetun:
+  #   image: qmcgaw/gluetun:latest
+  #   container_name: gluetun
+  #   restart: always
+  #   cap_add:
+  #     - NET_ADMIN
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   ports:
+  #     - 8888:8888/tcp                         # Gluetun Local Network HTTP proxy
+  #     - 8388:8388/tcp                         # Gluetun Local Network Shadowsocks
+  #     - 8388:8388/udp                         # Gluetun Local Network Shadowsocks
+  #     - ${GLUETUN_CONTROL_PORT:?err}:${GLUETUN_CONTROL_PORT:?err} # Gluetun Status Port
+  #     # Comment out lines below if they are not going to use Gluetun VPN for Internet connection:
+  #     # - ${WEBUI_PORT_SABNZBD:?err}:8080       # WebUI Portal: SABnzbd
+  #     - ${WEBUI_PORT_QBITTORRENT:?err}:${WEBUI_PORT_QBITTORRENT:?err}   # WebUI Portal: qBittorrent
+  #     - ${QBIT_PORT:?err}:6881                  # qBittorrent Torrent Port
+  #   volumes:
+  #     - ${PATH_DOCKER}/gluetun:/gluetun
+  #   environment:
+  #     - PUID=${PUID:?err}
+  #     - PGID=${PGID:?err}
+  #     - UMASK=${UMASK:?err}
+  #     - TZ=${TIME_ZONE:?err}
+  #     - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:?err}
+  #     - OPENVPN_USER=${VPN_USERNAME:?err}
+  #     - OPENVPN_PASSWORD=${VPN_PASSWORD:?err}
+  #     - SERVER_COUNTRIES=${SERVER_COUNTRIES}
+  #     - SERVER_REGIONS=${SERVER_REGIONS}
+  #     - SERVER_CITIES=${SERVER_CITIES}
+  #     - SERVER_HOSTNAMES=${SERVER_HOSTNAMES}
+  #     - SERVER_CATEGORIES=${SERVER_CATEGORIES}
+  #     - FIREWALL_OUTBOUND_SUBNETS=${LOCAL_SUBNET:?err}
+  #     - OPENVPN_CUSTOM_CONFIG=${OPENVPN_CUSTOM_CONFIG}
+  #     - HTTP_CONTROL_SERVER_ADDRESS=:${GLUETUN_CONTROL_PORT:?err}
+  #     - VPN_TYPE=${VPN_TYPE}
+  #     - VPN_ENDPOINT_IP=${VPN_ENDPOINT_IP}
+  #     - VPN_ENDPOINT_PORT=${VPN_ENDPOINT_PORT}
+  #     - VPN_PORT_FORWARDING=on
+  #     - PORT_FORWARD_ONLY=true
+  #     - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
+  #     - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+  #     - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+  #     - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+  #     - HTTPPROXY=on
+  #     - SHADOWSOCKS=on
+  #   networks:
+  #     - mediastack
   ###############
   # qBittorrent #
   ###############
-  qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: qbittorrent
-    restart: unless-stopped
-    depends_on:
-      gluetun:
-        condition: service_healthy
-        restart: true
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - UMASK=${UMASK:?err}
-      - TZ=${TIME_ZONE}
-      - WEBUI_PORT=${WEBUI_PORT_QBITTORRENT}
-      - TORRENTING_PORT=${QBIT_PORT}
-    volumes:
-      - ${PATH_DOCKER}/qbittorrent/config:/config
-      - ${PATH_DOWNLOAD}:/downloads
-    ## Do Not Change Network for qBittorrent
-    ## qBittorrent MUST always use a VPN / Secure Internet connection
-    network_mode: "service:gluetun"
+  # qbittorrent:
+  #   image: lscr.io/linuxserver/qbittorrent:latest
+  #   container_name: qbittorrent
+  #   restart: unless-stopped
+  #   depends_on:
+  #     gluetun:
+  #       condition: service_healthy
+  #       restart: true
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - UMASK=${UMASK:?err}
+  #     - TZ=${TIME_ZONE}
+  #     - WEBUI_PORT=${WEBUI_PORT_QBITTORRENT}
+  #     - TORRENTING_PORT=${QBIT_PORT}
+  #   volumes:
+  #     - ${PATH_DOCKER}/qbittorrent/config:/config
+  #     - ${PATH_DOWNLOAD}:/downloads
+  #   ## Do Not Change Network for qBittorrent
+  #   ## qBittorrent MUST always use a VPN / Secure Internet connection
+  #   network_mode: "service:gluetun"
   ########
   # Plex #
   ########
@@ -120,25 +122,25 @@ services:
   ##############
   # Jellyfin   #
   ##############
-  jellyfin:
-    container_name: jellyfin
-    image: lscr.io/linuxserver/jellyfin:latest
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIME_ZONE}
-      - JELLYFIN_PublishedServerUrl=192.168.0.40 #optional
-    volumes:
-      - ${PATH_JELLYFIN}/config:/config
-      - ${PATH_MEDIA}:/media:ro
-    ports:
-      - 8096:8096
-      - 8920:8920 #optional
-      - 7359:7359/udp #optional
-      # - 1900:1900/udp #optional
-    networks:
-      - mediastack
+  # jellyfin:
+  #   container_name: jellyfin
+  #   image: lscr.io/linuxserver/jellyfin:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TIME_ZONE}
+  #     - JELLYFIN_PublishedServerUrl=192.168.0.40 #optional
+  #   volumes:
+  #     - ${PATH_JELLYFIN}/config:/config
+  #     - ${PATH_MEDIA}:/media:ro
+  #   ports:
+  #     - 8096:8096
+  #     - 8920:8920 #optional
+  #     - 7359:7359/udp #optional
+  #     # - 1900:1900/udp #optional
+  #   networks:
+  #     - mediastack
   ############
   # Tautulli #
   ############
@@ -349,35 +351,38 @@ services:
   ################
   # Transmission #
   ################
-  # transmission:
-  #   image: haugene/transmission-openvpn:latest
-  #   container_name: transmission
-  #   restart: unless-stopped
-  #   cap_add:
-  #     - NET_ADMIN
-  #   ports:
-  #     - '9091:9091'
-  #   environment:
-  #     - PUID=${PUID}
-  #     - PGID=${PGID}
-  #     - TZ=${TIME_ZONE}
-  #     - USER=${TRANSMISSION_USERNAME}
-  #     - PASS=${TRANSMISSION_PASSWORD}
-  #     - OPENVPN_PROVIDER=${OPENVPN_PROVIDER}
-  #     - OPENVPN_CONFIG=${OPENVPN_CONFIG}
-  #     - OPENVPN_USERNAME=${OPENVPN_USERNAME}
-  #     - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-  #     - LOCAL_NETWORK=192.168.0.0/16
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: 10m
-  #   volumes:
-  #     - ${PATH_DOCKER}/transmission/config:/config
-  #     - ${PATH_DOWNLOAD}:/data
-  #     - ${PATH_DOWNLOAD}:/downloads
-  #     - ${PATH_DOWNLOAD}:/watch
-  #     - ${PATH_MEDIA}:/media
+  transmission:
+    image: haugene/transmission-openvpn:latest
+    container_name: transmission
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - '9091:9091'
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIME_ZONE}
+      - USER=${TRANSMISSION_USERNAME}
+      - PASS=${TRANSMISSION_PASSWORD}
+      - OPENVPN_PROVIDER=${OPENVPN_PROVIDER}
+      - OPENVPN_CONFIG=${OPENVPN_CONFIG}
+      - OPENVPN_USERNAME=${OPENVPN_USERNAME}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - LOCAL_NETWORK=192.168.0.0/16
+      - TRANSMISSION_DOWNLOAD_DIR=/downloads/completed
+      - TRANSMISSION_INCOMPLETE_DIR=/downloads/incomplete
+      - TRANSMISSION_WATCH_DIR=/downloads/watch
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+    volumes:
+      - ${PATH_DOCKER}/transmission/config:/config
+      - ${PATH_DOWNLOAD}:/data
+      - ${PATH_DOWNLOAD}:/downloads
+      - ${PATH_DOWNLOAD}:/watch
+      - ${PATH_MEDIA}:/media
   ############
   # Ad Guard #
   ############
